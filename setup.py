@@ -56,19 +56,22 @@ REQUIRED_PACKAGES = [
     'grpcio',
     'grpcio-tools',
     'protobuf>=3.2.0',
-    # Testing related.
-    'mock>=2.0.0',
-    'parameterized>=0.6.1',
-    'ruamel.yaml==0.15.37',
-    'pylint',
-    'pylint-quotes',
-    'SQLAlchemy>=1.1.9',
 ]
 
 OPTIONAL_PACKAGES = {
     'tracing': [
         'opencensus==0.1.6',
         'google-cloud-trace==0.19.0',
+    ],
+    'testing': [
+        'mock>=2.0.0',
+        'parameterized>=0.6.1',
+        'ruamel.yaml==0.15.37',
+        'pylint',
+        'pylint-quotes',
+        'flake8',
+        'SQLAlchemy>=1.1.9',
+        'codecov>=2.0.15',
     ]
 }
 
@@ -109,8 +112,8 @@ class PostInstallCommand(install):
     """Post installation command."""
 
     def run(self):
-        build_forseti_protos()
         install.do_egg_install(self)
+        build_forseti_protos()
 
 
 setup(

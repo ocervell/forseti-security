@@ -131,7 +131,6 @@ git fetch --all
 # Forseti dependencies
 pip install --upgrade pip==9.0.3
 pip install -q --upgrade setuptools wheel
-pip install -q --upgrade -r requirements.txt
 
 # Install instrumentation libs
 pip install .[tracing]

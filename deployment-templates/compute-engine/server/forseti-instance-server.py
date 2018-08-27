@@ -153,10 +153,9 @@ sudo apt-get install -y git unzip
 # Forseti host dependencies
 sudo apt-get install -y $(cat install/dependencies/apt_packages.txt | grep -v "#" | xargs)
 
-# Forseti dependencies
+# Python dependencies
 pip install --upgrade pip==9.0.3
 pip install -q --upgrade setuptools wheel
-pip install -q --upgrade -r requirements.txt
 
 # Setup Forseti logging
 touch /var/log/forseti.log
