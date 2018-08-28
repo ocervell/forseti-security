@@ -57,7 +57,16 @@ def trace_server_interceptor():
         exporter)
 
 
-def setup_exporter():
+def trace_libraries():
+    """Trace MySQL and Requests libraries using OpenCensus."""
+    from opencensus.trace import config_integration
+    from opencensus.trace import tracer as tracer_module
+    import mysql.connector
+    integrations = ['requests', 'mysql']
+    config_integration.trace_integrations(integrations)
+
+
+def setup_exporter(transport=background_thread.BackgroundThreadTransport):
     """Setup an exporter for traces.
 
     The default exporter is the StackdriverExporter. If it fails to initialize,
@@ -68,8 +77,7 @@ def setup_exporter():
         `FileExporter`: A file exporter.
     """
     try:
-        exporter = stackdriver_exporter.StackdriverExporter(
-            transport=background_thread.BackgroundThreadTransport)
+        exporter = stackdriver_exporter.StackdriverExporter(transport=transport)
         LOGGER.info(
             'StackdriverExporter set up successfully for project %s.',
             exporter.project_id)

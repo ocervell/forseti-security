@@ -125,9 +125,13 @@ def setup_interceptors(enable_tracing):
     """
     interceptors = []
     if enable_tracing and opencensus_enabled():
-        from google.cloud.forseti.services.tracing import trace_server_interceptor
+        from google.cloud.forseti.services.tracing import (
+                trace_server_interceptor,
+                trace_libraries)
         interceptors.append(trace_server_interceptor())
         LOGGER.info('Tracing interceptor set up.')
+        trace_libraries()
+        LOGGER.info("Tracing for MySQL and requests libraries enabled.")
     return tuple(interceptors)
 
 
