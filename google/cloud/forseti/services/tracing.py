@@ -14,18 +14,19 @@
 
 """Forseti gRPC tracing setup."""
 
+from opencensus.trace import config_integration
+from opencensus.trace import execution_context
 from opencensus.trace.tracer import Tracer
 from opencensus.trace.samplers import always_on
 from opencensus.trace.exporters import stackdriver_exporter, file_exporter
 from opencensus.trace.exporters.transports import background_thread
 from opencensus.trace.ext.grpc import client_interceptor, server_interceptor
-from opencensus.trace import config_integration
-from opencensus.trace import execution_context
 from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
 
 TRACE_LIBRARIES = ['requests', 'sqlalchemy', 'google_cloud_clientlibs']
+
 
 def trace_client_interceptor(endpoint):
     """Intercept gRPC calls on client-side and add tracing information
@@ -58,9 +59,10 @@ def trace_server_interceptor():
         sampler,
         exporter)
 
+
 def trace_extra_libs():
     """Intercept gRPC calls and add tracing information for the Python
-    libraries defined in `TRACE_LIBRARIES`
+    libraries defined in `TRACE_LIBRARIES`.
     """
     integrated = config_integration.trace_integrations(
         TRACE_LIBRARIES,
