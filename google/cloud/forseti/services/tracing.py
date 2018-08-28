@@ -61,16 +61,9 @@ def trace_server_interceptor():
     config_integration.trace_integrations(
         TRACE_LIBRARIES, 
         tracer=Tracer(exporter=exporter))
-    test_integrations()
     return server_interceptor.OpenCensusServerInterceptor(
         sampler,
         exporter)
-
-def test_integrations():
-    import requests
-    r = requests.get('https://www.wikipedia.org')
-    LOGGER.info("Should have gotten a 'trace' with status %s for 'https://wikipedia.org'" % r.status_code)
-    return r.status_code
 
 def setup_exporter(transport=background_thread.BackgroundThreadTransport):
     """Setup an exporter for traces.
