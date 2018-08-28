@@ -20,6 +20,7 @@ from opencensus.trace.exporters import stackdriver_exporter, file_exporter
 from opencensus.trace.exporters.transports import background_thread
 from opencensus.trace.ext.grpc import client_interceptor, server_interceptor
 from opencensus.trace import config_integration
+from opencensus.trace import tracer as tracer_module
 
 from google.cloud.forseti.common.util import logger
 
