@@ -25,7 +25,7 @@ from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
 
-TRACE_LIBRARIES = ['requests', 'sqlalchemy', 'google_cloud_clientlibs']
+TRACE_LIBRARIES = ['requests', 'sqlalchemy']
 
 
 def trace_client_interceptor(endpoint):
