@@ -20,8 +20,7 @@ from opencensus.trace.exporters import stackdriver_exporter, file_exporter
 from opencensus.trace.exporters.transports import background_thread
 from opencensus.trace.ext.grpc import client_interceptor, server_interceptor
 from opencensus.trace import config_integration
-from opencensus.trace import tracer as tracer_module
-
+from opencensus.trace import execution_context
 from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
@@ -55,14 +54,18 @@ def trace_server_interceptor():
 
     exporter = setup_exporter()
     sampler = always_on.AlwaysOnSampler()
-    
-    # Setup module integrations
-    config_integration.trace_integrations(
-        TRACE_LIBRARIES, 
-        tracer=Tracer(exporter=exporter))
     return server_interceptor.OpenCensusServerInterceptor(
         sampler,
         exporter)
+
+def trace_extra_libs():
+    """Intercept gRPC calls and add tracing information for the Python
+    libraries defined in `TRACE_LIBRARIES`
+    """
+    integrated = config_integration.trace_integrations(
+        TRACE_LIBRARIES,
+        execution_context.get_opencensus_tracer())
+    LOGGER.info("Tracing integration libraries: %s" % integrated)
 
 def setup_exporter(transport=background_thread.BackgroundThreadTransport):
     """Setup an exporter for traces.
