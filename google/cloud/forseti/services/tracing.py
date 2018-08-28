@@ -26,7 +26,7 @@ from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
 
-TRACE_LIBRARIES = ['requests', 'sqlalchemy']
+TRACE_LIBRARIES = ['requests', 'sqlalchemy', 'google_cloud_clientlibs']
 
 def trace_client_interceptor(endpoint):
     """Intercept gRPC calls on client-side and add tracing information
