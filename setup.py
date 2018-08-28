@@ -69,6 +69,7 @@ OPTIONAL_PACKAGES = {
     'tracing': [
         'opencensus==0.1.6',
         'google-cloud-trace==0.19.0',
+        'mysql-connector==2.1.6'
     ]
 }
 
