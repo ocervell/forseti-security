@@ -19,11 +19,14 @@ from opencensus.trace.samplers import always_on
 from opencensus.trace.exporters import stackdriver_exporter, file_exporter
 from opencensus.trace.exporters.transports import background_thread
 from opencensus.trace.ext.grpc import client_interceptor, server_interceptor
+from opencensus.trace import config_integration
+from opencensus.trace import tracer as tracer_module
 
 from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
 
+TRACE_LIBRARIES = ['requests', 'mysql']
 
 def trace_client_interceptor(endpoint):
     """Intercept gRPC calls on client-side and add tracing information
@@ -52,18 +55,16 @@ def trace_server_interceptor():
 
     exporter = setup_exporter()
     sampler = always_on.AlwaysOnSampler()
+    
+    # Setup MySQL and Requests integration
+    import mysql.connector
+    config_integration.trace_integrations(
+        TRACE_LIBRARIES, 
+        tracer=Tracer(exporter=exporter))
+
     return server_interceptor.OpenCensusServerInterceptor(
         sampler,
         exporter)
-
-
-def trace_libraries():
-    """Trace MySQL and Requests libraries using OpenCensus."""
-    from opencensus.trace import config_integration
-    from opencensus.trace import tracer as tracer_module
-    import mysql.connector
-    integrations = ['requests', 'mysql']
-    config_integration.trace_integrations(integrations)
 
 
 def setup_exporter(transport=background_thread.BackgroundThreadTransport):
