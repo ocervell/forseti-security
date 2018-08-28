@@ -26,7 +26,7 @@ from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
 
-TRACE_LIBRARIES = ['requests', 'mysql']
+TRACE_LIBRARIES = ['requests', 'sqlalchemy']
 
 def trace_client_interceptor(endpoint):
     """Intercept gRPC calls on client-side and add tracing information
@@ -56,8 +56,7 @@ def trace_server_interceptor():
     exporter = setup_exporter()
     sampler = always_on.AlwaysOnSampler()
     
-    # Setup MySQL and Requests integration
-    import mysql.connector
+    # Setup module integrations
     config_integration.trace_integrations(
         TRACE_LIBRARIES, 
         tracer=Tracer(exporter=exporter))
