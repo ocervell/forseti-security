@@ -16,7 +16,7 @@
 
 from opencensus.trace import config_integration
 from opencensus.trace import execution_context
-from opencensus.trace.tracer import Tracer
+from opencensus.trace.tracers import context_tracer
 from opencensus.trace.samplers import always_on
 from opencensus.trace.exporters import stackdriver_exporter, file_exporter
 from opencensus.trace.exporters.transports import background_thread
@@ -38,8 +38,8 @@ def trace_client_interceptor(endpoint):
     Returns:
         OpenCensusClientInterceptor: a gRPC client-side interceptor.
     """
-    exporter = setup_exporter()
-    tracer = Tracer(exporter=exporter)
+    exporter = get_exporter()
+    tracer = get_tracer(exporter)
     return client_interceptor.OpenCensusClientInterceptor(
         tracer,
         host_port=endpoint)
@@ -53,7 +53,7 @@ def trace_server_interceptor():
         OpenCensusServerInterceptor: a gRPC server-side interceptor.
     """
 
-    exporter = setup_exporter()
+    exporter = get_exporter()
     sampler = always_on.AlwaysOnSampler()
     return server_interceptor.OpenCensusServerInterceptor(
         sampler,
@@ -64,12 +64,21 @@ def trace_extra_libs():
     """Intercept gRPC calls and add tracing information for the Python
     libraries defined in `TRACE_LIBRARIES`.
     """
+    exporter = get_exporter()
+    tracer = get_tracer(exporter)
     integrated = config_integration.trace_integrations(
         TRACE_LIBRARIES,
-        execution_context.get_opencensus_tracer())
+        tracer)
     LOGGER.info("Tracing integration libraries: %s" % integrated)
 
-def setup_exporter(transport=background_thread.BackgroundThreadTransport):
+
+def get_tracer(exporter=None):
+    """Setup a new tracer or re-use an existing one."""
+    return execution_context.get_opencensus_tracer() or\
+            context_tracer.ContextTracer(exporter=exporter)
+
+
+def get_exporter(transport=background_thread.BackgroundThreadTransport):
     """Setup an exporter for traces.
 
     The default exporter is the StackdriverExporter. If it fails to initialize,

@@ -809,7 +809,9 @@ class ClientComposition(object):
         """
         interceptors = []
         if opencensus_enabled():
-            from google.cloud.forseti.services.tracing import \
-                trace_client_interceptor
+            from google.cloud.forseti.services.tracing import (
+                trace_client_interceptor,
+                trace_extra_libs)
             interceptors.append(trace_client_interceptor(self.endpoint))
+            trace_extra_libs()
         return tuple(interceptors)

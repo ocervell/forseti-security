@@ -96,10 +96,15 @@ def serve(endpoint,
 
     interceptors = setup_interceptors(enable_tracing)
 
+    if enable_tracing:
+        from google.cloud.forseti.services.tracing import trace_extra_libs
+        trace_extra_libs()
+    
     # Register services & start server
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers),
         interceptors=interceptors)
+
 
     for factory in factories:
         factory(config).create_and_register_service(server)
@@ -129,7 +134,6 @@ def setup_interceptors(enable_tracing):
                 trace_server_interceptor,
                 trace_extra_libs)
         interceptors.append(trace_server_interceptor())
-        trace_extra_libs()
         LOGGER.info('Tracing interceptor set up.')
     return tuple(interceptors)
 
