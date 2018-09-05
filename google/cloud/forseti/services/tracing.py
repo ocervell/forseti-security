@@ -16,20 +16,22 @@
 
 from opencensus.trace import config_integration
 from opencensus.trace import execution_context
-from opencensus.trace.tracer import Tracer
-from opencensus.trace.samplers import always_on
-from opencensus.trace.exporters import stackdriver_exporter, file_exporter
+from opencensus.trace.exporters import file_exporter
+from opencensus.trace.exporters import stackdriver_exporter
 from opencensus.trace.exporters.transports import background_thread
-from opencensus.trace.ext.grpc import client_interceptor, server_interceptor
+from opencensus.trace.ext.grpc import client_interceptor
+from opencensus.trace.ext.grpc import server_interceptor
+from opencensus.trace.samplers import always_on
+from opencensus.trace.tracer import Tracer
+
 from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
 
-TRACE_LIBRARIES = ['requests', 'sqlalchemy']
+DEFAULT_INTEGRATIONS = ['requests', 'sqlalchemy']
 
-def trace_client_interceptor(endpoint):
-    """Intercept gRPC calls on client-side and add tracing information
-    to the request.
+def create_client_interceptor(endpoint):
+    """Create gRPC client interceptor.
 
     Args:
         endpoint (str): The gRPC channel endpoint (e.g: localhost:5001).
@@ -44,9 +46,11 @@ def trace_client_interceptor(endpoint):
         host_port=endpoint)
 
 
-def trace_server_interceptor(extra_libs=True):
-    """Intercept gRPC calls on server-side and add tracing information
-    to the request.
+def create_server_interceptor(extras=True):
+    """Create gRPC server interceptor.
+
+    Args:
+        extras (bool): If set to True, also trace integration libraries.
 
     Returns:
         OpenCensusServerInterceptor: a gRPC server-side interceptor.
@@ -54,46 +58,43 @@ def trace_server_interceptor(extra_libs=True):
 
     exporter = setup_exporter()
     sampler = always_on.AlwaysOnSampler()
-    if extra_libs:
-        trace_extra_libs()
+    if extras:
+        trace_integrations()
     return server_interceptor.OpenCensusServerInterceptor(
         sampler,
         exporter)
 
 
-def trace_extra_libs(tracer=None):
-    """Intercept gRPC calls and add tracing information for the Python
-    libraries defined in `TRACE_LIBRARIES`.
+def trace_integrations(integrations=DEFAULT_INTEGRATIONS):
+    """Add tracing to supported OpenCensus integration libraries.
+
+    Args:
+        integrations (list): A list of integrations to trace.
     """
-    tracer = tracer or execution_context.get_opencensus_tracer()
+    tracer = execution_context.get_opencensus_tracer()
     integrated = config_integration.trace_integrations(
-        TRACE_LIBRARIES,
+        integrations,
         tracer)
     LOGGER.info("Tracing integration libraries: %s" % integrated)
 
 
-def setup_exporter():
+def setup_exporter(transport=background_thread.BackgroundThreadTransport):
     """Setup an exporter for traces.
 
     The default exporter is the StackdriverExporter. If it fails to initialize,
     the FileExporter will be used instead.
 
     Returns:
-        `StackdriverExporter`: A Stackdriver exporter.
-        `FileExporter`: A file exporter.
+        StackdriverExporter: A Stackdriver exporter.
+        FileExporter: A file exporter.
     """
     try:
-        exporter = stackdriver_exporter.StackdriverExporter(
-            transport=background_thread.BackgroundThreadTransport)
+        exporter = stackdriver_exporter.StackdriverExporter(transport=transport)
         LOGGER.info(
             'StackdriverExporter set up successfully for project %s.',
             exporter.project_id)
     except Exception as e:
-        LOGGER.exception(e)
-        LOGGER.warning('StackdriverExporter set up failed. Using FileExporter.')
-        exporter = file_exporter.FileExporter(
-            transport=background_thread.BackgroundThreadTransport)
-        LOGGER.info(
-            'FileExporter set up successfully. Writing to file: %s.',
-            exporter.file_name)
+        LOGGER.exception(
+            'StackdriverExporter set up failed. Using FileExporter.')
+        exporter = file_exporter.FileExporter(transport=transport)
     return exporter

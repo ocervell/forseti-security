@@ -94,7 +94,7 @@ def serve(endpoint,
         endpoint=endpoint)
     config.update_configuration()
 
-    interceptors = setup_interceptors(enable_tracing)
+    interceptors = create_interceptors(enable_tracing)
 
     # Register services & start server
     server = grpc.server(
@@ -114,7 +114,7 @@ def serve(endpoint,
             return
 
 
-def setup_interceptors(enable_tracing):
+def create_interceptors(enable_tracing):
     """Get gRPC interceptors to be added to server.
 
     Args:
@@ -125,8 +125,8 @@ def setup_interceptors(enable_tracing):
     """
     interceptors = []
     if enable_tracing and opencensus_enabled():
-        from google.cloud.forseti.services.tracing import trace_server_interceptor
-        interceptors.append(trace_server_interceptor())
+        from google.cloud.forseti.services import tracing
+        interceptors.append(tracing.create_server_interceptor())
         LOGGER.info('Tracing interceptor set up.')
     return tuple(interceptors)
 

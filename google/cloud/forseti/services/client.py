@@ -30,7 +30,8 @@ from google.cloud.forseti.services.scanner import scanner_pb2
 from google.cloud.forseti.services.scanner import scanner_pb2_grpc
 from google.cloud.forseti.services.server_config import server_pb2
 from google.cloud.forseti.services.server_config import server_pb2_grpc
-from google.cloud.forseti.services.utils import oneof, opencensus_enabled
+from google.cloud.forseti.services.utils import oneof
+from google.cloud.forseti.services.utils import opencensus_enabled
 
 # pylint: disable=too-many-instance-attributes
 
@@ -68,6 +69,19 @@ def require_model(f):
         raise ModelNotSetError('API requires model to be set.')
     return wrapper
 
+def create_interceptors(endpoint):
+    """gRPC client interceptors.
+
+    Returns:
+        tuple: A tuple of interceptors.
+    """
+    interceptors = []
+    if opencensus_enabled():
+        # It's okay for this to be enabled on the client, even if the tracing
+        # flag is disabled on the server.
+        from google.cloud.forseti.services import tracing
+        interceptors.append(tracing.create_client_interceptor(endpoint))
+    return tuple(interceptors)
 
 class ClientConfig(dict):
     """Provide access to client configuration data."""
@@ -718,9 +732,10 @@ class ClientComposition(object):
         Raises:
             Exception: gRPC connected but services not registered
         """
-        self.endpoint = endpoint
-        self.channel = grpc.insecure_channel(self.endpoint)
-        self.channel = grpc.intercept_channel(self.channel, *self.interceptors)
+        interceptors = create_interceptors(endpoint)
+        self.channel = grpc.intercept_channel(
+            grpc.insecure_channel(endpoint),
+            *interceptors)
         self.config = ClientConfig({'channel': self.channel, 'handle': ''})
 
         self.explain = ExplainClient(self.config)
@@ -799,17 +814,3 @@ class ClientComposition(object):
         """
 
         return self.model.delete_model(model_name)
-
-    @property
-    def interceptors(self):
-        """gRPC client interceptors.
-
-        Returns:
-            tuple: A tuple of interceptors.
-        """
-        interceptors = []
-        if opencensus_enabled():
-            from google.cloud.forseti.services.tracing import \
-                trace_client_interceptor
-            interceptors.append(trace_client_interceptor(self.endpoint))
-        return tuple(interceptors)
