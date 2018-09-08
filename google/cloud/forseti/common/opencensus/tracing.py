@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Forseti gRPC tracing setup."""
+"""Forseti OpenCensus gRPC tracing setup."""
 
 from opencensus.trace import config_integration
 from opencensus.trace import execution_context
@@ -27,8 +27,8 @@ from opencensus.trace.tracer import Tracer
 from google.cloud.forseti.common.util import logger
 
 LOGGER = logger.get_logger(__name__)
-
 DEFAULT_INTEGRATIONS = ['requests', 'sqlalchemy']
+
 
 def create_client_interceptor(endpoint):
     """Create gRPC client interceptor.
@@ -39,7 +39,7 @@ def create_client_interceptor(endpoint):
     Returns:
         OpenCensusClientInterceptor: a gRPC client-side interceptor.
     """
-    exporter = setup_exporter()
+    exporter = create_exporter()
     tracer = Tracer(exporter=exporter)
     return client_interceptor.OpenCensusClientInterceptor(
         tracer,
@@ -56,7 +56,7 @@ def create_server_interceptor(extras=True):
         OpenCensusServerInterceptor: a gRPC server-side interceptor.
     """
 
-    exporter = setup_exporter()
+    exporter = create_exporter()
     sampler = always_on.AlwaysOnSampler()
     if extras:
         trace_integrations()
@@ -70,30 +70,38 @@ def trace_integrations(integrations=DEFAULT_INTEGRATIONS):
 
     Args:
         integrations (list): A list of integrations to trace.
+
+    Returns:
+        list: The integrated libraries names.
     """
     tracer = execution_context.get_opencensus_tracer()
     integrated = config_integration.trace_integrations(
         integrations,
         tracer)
-    LOGGER.info("Tracing integration libraries: %s" % integrated)
+    LOGGER.info('Tracing integration libraries: %s', integrated)
+    return integrated
 
 
-def setup_exporter(transport=background_thread.BackgroundThreadTransport):
-    """Setup an exporter for traces.
+def create_exporter(transport=background_thread.BackgroundThreadTransport):
+    """Create an exporter for traces.
 
     The default exporter is the StackdriverExporter. If it fails to initialize,
     the FileExporter will be used instead.
 
+    Args:
+        transport (opencensus.trace.exporters.transports.base.Transport): the
+            OpenCensus transport used by the exporter to emit data.
+
     Returns:
         StackdriverExporter: A Stackdriver exporter.
-        FileExporter: A file exporter.
+        FileExporter: A file exporter. Default path: 'opencensus-traces.json'.
     """
     try:
         exporter = stackdriver_exporter.StackdriverExporter(transport=transport)
         LOGGER.info(
             'StackdriverExporter set up successfully for project %s.',
             exporter.project_id)
-    except Exception as e:
+    except Exception:
         LOGGER.exception(
             'StackdriverExporter set up failed. Using FileExporter.')
         exporter = file_exporter.FileExporter(transport=transport)

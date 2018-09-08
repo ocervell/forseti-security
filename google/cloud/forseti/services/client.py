@@ -31,7 +31,7 @@ from google.cloud.forseti.services.scanner import scanner_pb2_grpc
 from google.cloud.forseti.services.server_config import server_pb2
 from google.cloud.forseti.services.server_config import server_pb2_grpc
 from google.cloud.forseti.services.utils import oneof
-from google.cloud.forseti.services.utils import opencensus_enabled
+from google.cloud.forseti.services.utils import is_opencensus_enabled
 
 # pylint: disable=too-many-instance-attributes
 
@@ -69,19 +69,24 @@ def require_model(f):
         raise ModelNotSetError('API requires model to be set.')
     return wrapper
 
+
 def create_interceptors(endpoint):
-    """gRPC client interceptors.
+    """Create gRPC client interceptors.
+
+    Args:
+        endpoint (str): The gRPC server endpoint. E.g: 'localhost:443'
 
     Returns:
         tuple: A tuple of interceptors.
     """
     interceptors = []
-    if opencensus_enabled():
+    if is_opencensus_enabled():
         # It's okay for this to be enabled on the client, even if the tracing
         # flag is disabled on the server.
-        from google.cloud.forseti.services import tracing
+        from google.cloud.forseti.common.opencensus import tracing
         interceptors.append(tracing.create_client_interceptor(endpoint))
     return tuple(interceptors)
+
 
 class ClientConfig(dict):
     """Provide access to client configuration data."""
